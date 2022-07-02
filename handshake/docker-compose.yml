@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: $APP_HANDSHAKE_APP_IP
+      APP_PORT: $APP_HANDSHAKE_APP_PORT
+
+  hsd:
+    image: sinpapeles/hsd:4.0.0
+    restart: on-failure
+    volumes:
+      - "${APP_DATA_DIR}/data/hsd:/root/.hsd"
+    environment:
+      HSD_NETWORK: "${APP_HANDSHAKE_NETWORK}"
+      HSD_API_KEY: "${APP_PASSWORD}"
+      HSD_NO_WALLET: "true"
+      HSD_HTTP_HOST: "0.0.0.0"
+      HSD_LOG_LEVEL: info
+      HSD_CORS: "true"
+      HSD_INDEX_TX: "true"
+      HSD_INDEX_ADDRESS: "true"
+      HSD_BIP37: "true"
+      HSD_AGENT: umbrel
+
+    ports:
+      - "$APP_HANDSHAKE_PORT:$APP_HANDSHAKE_PORT"
+    networks:
+      default:
+        ipv4_address: $APP_HANDSHAKE_NODE_IP
+  app:
+    image: sinpapeles/umbrel-handshake:0.0.4
+    depends_on: [hsd]
+    command: ["npm", "start"]
+    restart: on-failure
+    environment:
+      PORT: "$APP_HANDSHAKE_APP_PORT"
+      HSD_HOST: $APP_HANDSHAKE_NODE_IP
+      HSD_PORT: $APP_HANDSHAKE_PORT
+      HSD_API_KEY: "${APP_PASSWORD}"
+      DEVICE_DOMAIN_NAME: "${DEVICE_DOMAIN_NAME}"
+    networks:
+      default:
+        ipv4_address: $APP_HANDSHAKE_APP_IP
